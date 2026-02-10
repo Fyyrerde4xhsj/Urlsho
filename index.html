@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Word Search Premium</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="app-wrap">
+        <!-- TOP HUD -->
+        <header class="premium-header">
+            <div class="hud-top">
+                <div class="level-badge">LVL <span id="level-display">1</span></div>
+                <div class="score-badge">✨ <span id="score-display">0</span></div>
+                <div class="timer-badge" id="timer-container">
+                    <span id="timer-display">00:00</span>
+                </div>
+            </div>
+            <div class="progress-wrapper">
+                <div id="progress-bar" class="progress-fill"></div>
+            </div>
+        </header>
+
+        <!-- MAIN GAME AREA -->
+        <main class="game-area">
+            <div id="word-grid" class="premium-grid"></div>
+        </main>
+
+        <!-- WORD LIST SECTION -->
+        <footer class="word-section">
+            <div class="section-title">FIND THE WORDS</div>
+            <div id="word-list" class="chip-container"></div>
+            <button id="hint-btn" class="fab-hint">💡 <span id="hint-count">0</span></button>
+        </footer>
+
+        <!-- LEVEL COMPLETE MODAL -->
+        <div id="level-modal" class="modal-overlay hidden">
+            <div class="premium-modal">
+                <div class="confetti-icon">🎉</div>
+                <h2>Level Complete!</h2>
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <small>TIME</small>
+                        <strong id="stat-time">0:45</strong>
+                    </div>
+                    <div class="stat-card">
+                        <small>MISTAKES</small>
+                        <strong id="stat-mistakes">2</strong>
+                    </div>
+                    <div class="stat-card">
+                        <small>POINTS</small>
+                        <strong id="stat-points">+150</strong>
+                    </div>
+                </div>
+
+                <!-- AD CONTAINER (Post-Level) -->
+                <div id="levelAd" class="ad-placeholder">
+                    <small>ADVERTISEMENT</small>
+                    <div class="ad-content">AdSense Banner Placeholder</div>
+                </div>
+
+                <button id="next-level-btn" class="btn-primary">CONTINUE</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- PERSISTENT BOTTOM AD -->
+    <div class="bottom-ad-container">
+        <small>Sponsored</small>
+        <div class="ad-banner-placeholder">Banner Ad Placeholder</div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
