@@ -3,74 +3,503 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Word Search Premium</title>
-    <link rel="stylesheet" href="style.css">
+    <title>Find the Odd One – Brain Challenge</title>
+    <style>
+        :root {
+            --primary: #6e8efb;
+            --secondary: #a777e3;
+            --accent: #00f2fe;
+            --success: #00f5a0;
+            --danger: #ff4b2b;
+            --bg-dark: #0f0c29;
+            --glass: rgba(255, 255, 255, 0.1);
+            --glass-border: rgba(255, 255, 255, 0.2);
+            --text: #ffffff;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            -webkit-tap-highlight-color: transparent;
+            user-select: none;
+        }
+
+        body {
+            background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
+            background-attachment: fixed;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: var(--text);
+            overflow: hidden;
+        }
+
+        /* --- UI Containers --- */
+        .game-container {
+            width: 100%;
+            max-width: 500px;
+            padding: 20px;
+            text-align: center;
+            z-index: 1;
+        }
+
+        .screen {
+            display: none;
+            flex-direction: column;
+            gap: 20px;
+            animation: fadeIn 0.5s ease-out;
+        }
+
+        .screen.active {
+            display: flex;
+        }
+
+        /* --- Glassmorphism Card --- */
+        .glass-card {
+            background: var(--glass);
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+            border: 1px solid var(--glass-border);
+            border-radius: 24px;
+            padding: 30px;
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+        }
+
+        /* --- HUD Elements --- */
+        .hud {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            font-weight: bold;
+            font-size: 1.1rem;
+        }
+
+        .timer-container {
+            width: 100%;
+            height: 10px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            overflow: hidden;
+            margin-bottom: 20px;
+            border: 1px solid var(--glass-border);
+        }
+
+        .timer-bar {
+            height: 100%;
+            width: 100%;
+            background: linear-gradient(90deg, var(--accent), var(--primary));
+            transition: width 0.1s linear;
+        }
+
+        .progress-container {
+            width: 100%;
+            height: 6px;
+            background: rgba(255, 255, 255, 0.05);
+            margin-top: 15px;
+            border-radius: 10px;
+        }
+
+        .progress-fill {
+            height: 100%;
+            width: 0%;
+            background: var(--success);
+            transition: width 0.3s ease;
+            border-radius: 10px;
+        }
+
+        /* --- Question & Grid --- */
+        .question-text {
+            font-size: 1.4rem;
+            margin-bottom: 20px;
+            font-weight: 700;
+            text-shadow: 0 0 10px rgba(0, 242, 254, 0.3);
+        }
+
+        .options-grid {
+            display: grid;
+            gap: 12px;
+            margin-top: 10px;
+        }
+
+        /* Grid variants */
+        .grid-4 { grid-template-columns: repeat(2, 1fr); }
+        .grid-6 { grid-template-columns: repeat(2, 1fr); }
+        .grid-9 { grid-template-columns: repeat(3, 1fr); }
+        .grid-12 { grid-template-columns: repeat(3, 1fr); }
+
+        .option-btn {
+            background: var(--glass);
+            border: 1px solid var(--glass-border);
+            border-radius: 16px;
+            padding: 15px 5px;
+            color: white;
+            font-size: 1.1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 70px;
+            word-break: break-all;
+        }
+
+        .option-btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+            border-color: var(--accent);
+        }
+
+        /* --- Buttons --- */
+        .cta-btn {
+            background: linear-gradient(45deg, var(--primary), var(--secondary));
+            border: none;
+            border-radius: 50px;
+            padding: 15px 40px;
+            color: white;
+            font-size: 1.2rem;
+            font-weight: bold;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(110, 142, 251, 0.4);
+            transition: transform 0.2s;
+            text-transform: uppercase;
+        }
+
+        .cta-btn:hover {
+            transform: scale(1.05);
+        }
+
+        /* --- Animations --- */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-8px); }
+            75% { transform: translateX(8px); }
+        }
+
+        .shake { animation: shake 0.3s ease-in-out; }
+
+        .correct-anim {
+            background: var(--success) !important;
+            color: #000 !important;
+            transform: scale(1.08) !important;
+        }
+
+        .wrong-anim {
+            background: var(--danger) !important;
+        }
+
+        .stat-row {
+            display: flex;
+            justify-content: space-between;
+            margin: 10px 0;
+            padding: 12px;
+            background: rgba(0,0,0,0.2);
+            border-radius: 12px;
+        }
+
+        @media (max-width: 400px) {
+            .option-btn { min-height: 60px; font-size: 1rem; }
+            .grid-12 { grid-template-columns: repeat(3, 1fr); gap: 6px; }
+        }
+    </style>
 </head>
 <body>
-    <div class="app-wrap">
-        <!-- TOP HUD -->
-        <header class="premium-header">
-            <div class="hud-top">
-                <div class="level-badge">LVL <span id="level-display">1</span></div>
-                <div class="score-badge">✨ <span id="score-display">0</span></div>
-                <div class="timer-badge" id="timer-container">
-                    <span id="timer-display">00:00</span>
-                </div>
+
+    <div class="game-container">
+        
+        <!-- Start Screen -->
+        <div id="start-screen" class="screen glass-card active">
+            <h1 style="font-size: 2.2rem; margin-bottom: 10px;">BRAIN<br><span style="color: var(--accent);">CHALLENGE</span></h1>
+            <p style="opacity: 0.8; margin-bottom: 20px;">Spot the pattern breaker.</p>
+            <div style="margin: 20px 0;">
+                <button class="cta-btn" onclick="game.start()">Start Game</button>
             </div>
-            <div class="progress-wrapper">
-                <div id="progress-bar" class="progress-fill"></div>
+            <div id="main-high-score" style="color: var(--accent); font-weight: bold;">High Score: 0</div>
+        </div>
+
+        <!-- Game Screen -->
+        <div id="game-screen" class="screen">
+            <div class="hud glass-card" style="padding: 12px 20px; border-radius: 15px;">
+                <div>Level: <span id="level-num">1</span></div>
+                <div>Score: <span id="score-val">0</span></div>
             </div>
-        </header>
 
-        <!-- MAIN GAME AREA -->
-        <main class="game-area">
-            <div id="word-grid" class="premium-grid"></div>
-        </main>
+            <div class="timer-container">
+                <div id="timer-bar" class="timer-bar"></div>
+            </div>
 
-        <!-- WORD LIST SECTION -->
-        <footer class="word-section">
-            <div class="section-title">FIND THE WORDS</div>
-            <div id="word-list" class="chip-container"></div>
-            <button id="hint-btn" class="fab-hint">💡 <span id="hint-count">0</span></button>
-        </footer>
+            <div class="glass-card">
+                <div id="question-text" class="question-text">Find the odd one</div>
+                <div id="options-grid" class="options-grid"></div>
+            </div>
 
-        <!-- LEVEL COMPLETE MODAL -->
-        <div id="level-modal" class="modal-overlay hidden">
-            <div class="premium-modal">
-                <div class="confetti-icon">🎉</div>
-                <h2>Level Complete!</h2>
-                <div class="stats-grid">
-                    <div class="stat-card">
-                        <small>TIME</small>
-                        <strong id="stat-time">0:45</strong>
-                    </div>
-                    <div class="stat-card">
-                        <small>MISTAKES</small>
-                        <strong id="stat-mistakes">2</strong>
-                    </div>
-                    <div class="stat-card">
-                        <small>POINTS</small>
-                        <strong id="stat-points">+150</strong>
-                    </div>
-                </div>
-
-                <!-- AD CONTAINER (Post-Level) -->
-                <div id="levelAd" class="ad-placeholder">
-                    <small>ADVERTISEMENT</small>
-                    <div class="ad-content">AdSense Banner Placeholder</div>
-                </div>
-
-                <button id="next-level-btn" class="btn-primary">CONTINUE</button>
+            <div class="progress-container">
+                <div id="progress-fill" class="progress-fill"></div>
             </div>
         </div>
+
+        <!-- Game Over Screen -->
+        <div id="game-over-screen" class="screen glass-card">
+            <h2 id="game-over-title" style="font-size: 2rem; color: var(--danger);">TIME'S UP!</h2>
+            <div style="margin: 20px 0;">
+                <div class="stat-row"><span>Score:</span><span id="final-score">0</span></div>
+                <div class="stat-row"><span>Level Reached:</span><span id="final-level">1</span></div>
+                <div id="new-high-score" style="color: var(--success); display: none; margin-top: 10px; font-weight: bold;">NEW HIGH SCORE!</div>
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 10px;">
+                <button class="cta-btn" onclick="adTryAgain()">Try Again</button>
+                <button class="cta-btn" style="background: rgba(255,255,255,0.1);" onclick="game.showMenu()">Main Menu</button>
+            </div>
+        </div>
+
     </div>
 
-    <!-- PERSISTENT BOTTOM AD -->
-    <div class="bottom-ad-container">
-        <small>Sponsored</small>
-        <div class="ad-banner-placeholder">Banner Ad Placeholder</div>
-    </div>
+    <script>
+        /**
+         * QUESTION BANK
+         * logic categorized by difficulty
+         */
+        const questionBank = {
+            easy: [
+                { options: ['Apple', 'Banana', 'Orange', 'Hammer'], odd: 3 },
+                { options: ['2', '4', '8', '7'], odd: 3 },
+                { options: ['🐶', '🐱', '🐭', '🚗'], odd: 3 },
+                { options: ['🔵', '🔵', '🔺', '🔵'], odd: 2 },
+                { options: ['Red', 'Blue', 'Green', 'Dog'], odd: 3 }
+            ],
+            hard: [
+                // Similar Looking Numbers
+                { options: ['1001', '1011'], odd: 1 },
+                { options: ['9989', '9999'], odd: 0 },
+                { options: ['1212', '1221'], odd: 1 },
+                { options: ['555.5', '55.55'], odd: 1 },
+                // Words
+                { options: ['Desert', 'Dessert'], odd: 1 },
+                { options: ['Affect', 'Effect'], odd: 1 },
+                { options: ['Quite', 'Quiet'], odd: 1 },
+                { options: ['Loose', 'Lose'], odd: 1 },
+                // Case Tricks
+                { options: ['BLUE', 'Blue'], odd: 1 },
+                { options: ['green', 'Green'], odd: 1 },
+                { options: ['ORANGE', '0RANGE'], odd: 1 },
+                // Emojis
+                { options: ['😀', '😁'], odd: 1 },
+                { options: ['🟢', '🟩'], odd: 1 },
+                { options: ['🌑', '🌚'], odd: 1 },
+                { options: ['🔹', '🔷'], odd: 1 },
+                // Patterns
+                { options: ['2, 4, 8, 16', '2, 4, 8, 15'], odd: 1 },
+                { options: ['A, C, E, G', 'A, C, E, F'], odd: 1 },
+                { options: ['1, 3, 6, 10', '1, 3, 6, 9'], odd: 1 }
+            ]
+        };
 
-    <script src="script.js"></script>
+        const sound = {
+            ctx: null,
+            init() { if (!this.ctx) this.ctx = new (window.AudioContext || window.webkitAudioContext)(); },
+            play(freq, type, duration) {
+                if (!this.ctx) return;
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                osc.type = type;
+                osc.frequency.setValueAtTime(freq, this.ctx.currentTime);
+                gain.gain.setValueAtTime(0.1, this.ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + duration);
+                osc.connect(gain); gain.connect(this.ctx.destination);
+                osc.start(); osc.stop(this.ctx.currentTime + duration);
+            },
+            correct() { this.play(880, 'sine', 0.2); this.play(1100, 'sine', 0.3); },
+            wrong() { this.play(150, 'sawtooth', 0.3); }
+        };
+
+        const game = {
+            level: 1,
+            score: 0,
+            timer: null,
+            timeLeft: 15,
+            maxTime: 15,
+            isLocked: false,
+            highScore: localStorage.getItem('oddOneHighScore') || 0,
+
+            init() {
+                document.getElementById('main-high-score').innerText = `High Score: ${this.highScore}`;
+            },
+
+            showScreen(screenId) {
+                document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+                document.getElementById(screenId).classList.add('active');
+            },
+
+            showMenu() {
+                this.showScreen('start-screen');
+                this.init();
+            },
+
+            start() {
+                sound.init();
+                this.level = 1;
+                this.score = 0;
+                this.showScreen('game-screen');
+                this.loadLevel();
+                this.updateHUD();
+            },
+
+            updateHUD() {
+                document.getElementById('level-num').innerText = this.level;
+                document.getElementById('score-val').innerText = this.score;
+                document.getElementById('progress-fill').style.width = `${Math.min((this.level / 15) * 100, 100)}%`;
+            },
+
+            getDifficulty() {
+                if (this.level >= 11) return { time: 8, count: 12 };
+                if (this.level >= 7)  return { time: 10, count: 9 };
+                if (this.level >= 4)  return { time: 12, count: 6 };
+                return { time: 15, count: 4 };
+            },
+
+            loadLevel() {
+                this.isLocked = false;
+                const settings = this.getDifficulty();
+                this.maxTime = settings.time;
+                this.timeLeft = settings.time;
+                
+                const grid = document.getElementById('options-grid');
+                grid.innerHTML = '';
+                grid.className = `options-grid grid-${settings.count}`;
+
+                const question = this.generateQuestion(settings.count);
+
+                question.options.forEach((opt, index) => {
+                    const btn = document.createElement('button');
+                    btn.className = 'option-btn';
+                    btn.innerText = opt;
+                    
+                    // Distractions for Level 5+
+                    if (this.level >= 5) {
+                        btn.style.transform = `rotate(${Math.random() * 4 - 2}deg) scale(${Math.random() * 0.1 + 0.95})`;
+                        btn.style.filter = `brightness(${Math.random() * 0.3 + 0.85})`;
+                    }
+
+                    btn.onclick = () => this.handleAnswer(index, question.odd, btn);
+                    grid.appendChild(btn);
+                });
+
+                this.startTimer();
+            },
+
+            generateQuestion(count) {
+                const isHard = this.level >= 4;
+                const pool = isHard ? questionBank.hard : questionBank.easy;
+                const base = pool[Math.floor(Math.random() * pool.length)];
+                
+                let options = [];
+                let oddIdx = Math.floor(Math.random() * count);
+
+                if (isHard) {
+                    // Fill grid with 'normal' item and hide the 'odd' one at random index
+                    // In the hard pool, index 0 is normal, 1 is odd (usually)
+                    const normalItem = base.options[0];
+                    const oddItem = base.options[1];
+                    options = Array(count).fill(normalItem);
+                    options[oddIdx] = oddItem;
+                } else {
+                    // Easy mode uses specific predefined sets
+                    return { options: base.options, odd: base.odd };
+                }
+
+                return { options, odd: oddIdx };
+            },
+
+            handleAnswer(selectedIndex, correctIndex, btn) {
+                if (this.isLocked) return;
+                this.isLocked = true;
+                clearInterval(this.timer);
+
+                if (selectedIndex === correctIndex) {
+                    sound.correct();
+                    btn.classList.add('correct-anim');
+                    this.score += (this.timeLeft > (this.maxTime * 0.6)) ? 15 : 10;
+
+                    setTimeout(() => {
+                        this.level++;
+                        this.loadLevel();
+                        this.updateHUD();
+                    }, 600);
+                } else {
+                    sound.wrong();
+                    btn.classList.add('wrong-anim');
+                    document.getElementById('options-grid').classList.add('shake');
+                    document.querySelectorAll('.option-btn')[correctIndex].classList.add('correct-anim');
+
+                    setTimeout(() => {
+                        document.getElementById('options-grid').classList.remove('shake');
+                        this.gameOver("WRONG CHOICE!");
+                    }, 1200);
+                }
+            },
+
+            startTimer() {
+                clearInterval(this.timer);
+                const bar = document.getElementById('timer-bar');
+                const startTime = Date.now();
+                const duration = this.maxTime * 1000;
+
+                this.timer = setInterval(() => {
+                    const elapsed = Date.now() - startTime;
+                    this.timeLeft = Math.max(0, (duration - elapsed) / 1000);
+                    bar.style.width = (this.timeLeft / this.maxTime) * 100 + '%';
+                    
+                    if (this.timeLeft < 3) bar.style.background = 'var(--danger)';
+                    else bar.style.background = 'linear-gradient(90deg, var(--accent), var(--primary))';
+
+                    if (this.timeLeft <= 0) {
+                        clearInterval(this.timer);
+                        this.gameOver("TIME'S UP!");
+                    }
+                }, 50);
+            },
+
+            gameOver(msg) {
+                this.isLocked = true;
+                document.getElementById('game-over-title').innerText = msg;
+                document.getElementById('final-score').innerText = this.score;
+                document.getElementById('final-level').innerText = this.level;
+                
+                if (this.score > this.highScore) {
+                    this.highScore = this.score;
+                    localStorage.setItem('oddOneHighScore', this.highScore);
+                    document.getElementById('new-high-score').style.display = 'block';
+                } else {
+                    document.getElementById('new-high-score').style.display = 'none';
+                }
+                this.showScreen('game-over-screen');
+            }
+        };
+
+        window.onload = () => game.init();
+function adTryAgain() {
+
+    // Open ad link
+    const ad = window.open("https://omg10.com/4/10110602", "_blank");
+
+    // If popup blocked → fallback
+    if (!ad) {
+        window.location.href = "https://omg10.com/4/10110602";
+    }
+
+    // Restart game after short delay
+    setTimeout(() => {
+        game.start();
+    }, 600);
+}
+    </script>
 </body>
 </html>
